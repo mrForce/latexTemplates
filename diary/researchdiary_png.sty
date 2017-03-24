@@ -13,7 +13,11 @@
 %%                                                          %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \usepackage{arrayjobx}
+\usepackage{xstring}
+\usepackage{tabulary}
+\usepackage{pbox}
 \usepackage{multido}
+\usepackage{array}
 \usepackage{extract}
 \usepackage{fancyhdr}
 \usepackage{intcalc}
@@ -58,6 +62,7 @@
 %\lfoot{\textsc{\institution}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
 \newenvironment{activityTime}{%
   \def\TableBody{}
     %pass in start time, end time, and task.
@@ -66,14 +71,18 @@
     \xdef\Start{##1}
     \xdef\End{##2}
     \xdef\Task{##3}
-   	\xdef\Time{\intcalcSub{\End}{\Start}}
-  %  \FPeval{\Time}{\End - \Start}
- % \xdef\Time{5}
- 	\ifnum\Start>12 \xdef\Start{\intcalcSub{\Start}{12} p.m.} \else \xdef\Start{\Start \ a.m.}\fi
-    \ifnum\End>12 \xdef\End{\intcalcSub{\End}{12} p.m.} \else \xdef\End{\End \ a.m.}\fi
-    \xappto\TableBody{\Start & \End & \Time & \Task \noexpand \\ \noexpand \hline}
+    \StrCut{\Start}{:}{\StartHours}{\StartMinutes}
+    \StrCut{\End}{:}{\EndHours}{\EndMinutes}
+    \xdef\TimeHours{\intcalcSub{\EndHours}{\StartHours}}
+    \xdef\TimeMinutes{\intcalcSub{\EndMinutes}{\StartMinutes}}
+    \ifnum\TimeMinutes<0 \xdef\TimeHours{\intcalcSub{\TimeHours}{1}}\xdef\TimeMinutes{\intcalcAdd{\TimeMinutes}{60}} \fi
+    %If the number of minutes is less than 10, then we only have a single digit. We need to add a zero before it.
+    \ifnum\TimeMinutes<10 \xdef\TimeMinutes{0\TimeMinutes}\fi
+	\ifnum\StartHours>12 \xdef\Start{\intcalcSub{\StartHours}{12}:\StartMinutes \ p.m.} \else \xdef\Start{\StartHours:\StartMinutes \ a.m.}\fi
+    \ifnum\EndHours>12 \xdef\End{\intcalcSub{\EndHours}{12}:\EndMinutes \ p.m.} \else \xdef\End{\EndHours:\EndMinutes \ a.m.}\fi
+    \xappto\TableBody{\Start & \End & \TimeHours:\TimeMinutes & \Task \noexpand \\ \noexpand \hline}
     }
-  \begin{tabular}{| c | c | c | c |}
+  \begin{tabular}{| P{2cm} | P{2cm} | P{1.5cm} | p{10cm} |}
   \hline
   \textbf{Start} & \textbf{End} & \textbf{Time} & \textbf{Activity} \\ \hline}{
   \TableBody
